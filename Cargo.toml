@@ -1,0 +1,20 @@
+[package]
+name = "hk"
+version = "0.1.0"
+authors = ["Hendrik Schawe <hschawe@u-cergy.fr>"]
+edition = "2018"
+
+[dependencies]
+rand = "0.7.0"
+rand_pcg = "0.2.0"
+rand_distr = "0.2.2"
+itertools = "0.8"
+ordered-float = "1.0"
+structopt = "0.3"
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "benchmark"
+harness = false
