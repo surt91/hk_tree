@@ -1,3 +1,5 @@
+/// This file implements a rudimentary command line interface and the main loop for simulations
+
 use std::fs::File;
 use std::io::prelude::*;
 

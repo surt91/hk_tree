@@ -1,3 +1,11 @@
+/// This file implements the Hegselmann-Krause bounded confidence model with heterogeneous
+/// confidences and synchronous update. It implements two different algorithms to update
+/// the agents:
+/// `sweep_naive` uses the classical method of iterating over all agents to find those
+///               within the confidence interval for the calculation of the next state
+/// `sweep_tree`  uses the improved algorithm, based on a search tree (here a BTree), introduced
+///               in the corresponding article
+
 use std::collections::BTreeMap;
 use std::ops::Bound::Included;
 use std::fmt;
@@ -8,6 +16,9 @@ use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64;
 use itertools::Itertools;
 
+// note that `OrderedFloat` is a technicality to allow using floats as keys in
+// the tree (rooted in the problem that IEEE floats do not have a total order, due to `nan`,
+// which can therefore not be part of a search tree)
 use ordered_float::OrderedFloat;
 
 /// numerical tolerance
@@ -38,7 +49,6 @@ impl PartialEq for HKAgent {
 pub struct HegselmannKrause {
     pub num_agents: u32,
     pub agents: Vec<HKAgent>,
-    pub time: usize,
     min_confidence: f32,
     max_confidence: f32,
 
@@ -78,7 +88,6 @@ impl HegselmannKrause {
         let mut hk = HegselmannKrause {
             num_agents: n,
             agents,
-            time: 0,
             min_confidence,
             max_confidence,
             opinion_set,
@@ -95,7 +104,7 @@ impl HegselmannKrause {
     /// and prepare all internal datastructures
     /// afterwards the object will be ready for a fresh simulation
     pub fn reset(&mut self) {
-        /// helper function to scale
+        /// helper function to scale a uniform[0,1] random number to a uniform[low, high]
         fn scale(x: f32, low: f32, high: f32) -> f32 {
             x*(high-low)+low
         }
@@ -107,34 +116,13 @@ impl HegselmannKrause {
         )).collect();
 
         // initialize the tree of opinions with the initial conditions of the agents
-        // note that `OrderedFloat` is a technicality to allow using floats as keys in
-        // the tree (rooted in the problem that IEEE floats do not have a total order)
         self.opinion_set.clear();
         for i in self.agents.iter() {
             *self.opinion_set.entry(OrderedFloat(i.opinion)).or_insert(0) += 1;
         }
-        // assert that every agent has a corrsponding opinio in the tree
+        // assert that every agent has a corrsponding opinion in the tree
         assert!(self.opinion_set.iter().map(|(_, v)| v).sum::<u32>() == self.num_agents);
 
-        self.time = 0;
-    }
-
-    /// update the internal datastructure in case, any opinion was updated
-    fn update_entry(&mut self, old_opinion: f32, new_opinion: f32) {
-        // often, nothing changes -> optimize for this converged case
-        if old_opinion == new_opinion {
-            return
-        }
-
-        // if something changes, we have to update the tree
-        // decrease the counter of the old opinion and remove it, if the counter hits 0
-        *self.opinion_set.entry(OrderedFloat(old_opinion))
-            .or_insert_with(|| panic!("Removed opinion was not in the tree!")) -= 1;
-        if self.opinion_set[&OrderedFloat(old_opinion)] == 0 {
-            self.opinion_set.remove(&OrderedFloat(old_opinion));
-        }
-        // increase the counter of the new opinion or insert a new node for it
-        *self.opinion_set.entry(OrderedFloat(new_opinion)).or_insert(0) += 1;
     }
 
     /// calculate all new opinions using the naive method of iterating all agents
@@ -165,13 +153,39 @@ impl HegselmannKrause {
         }
     }
 
+    /// update the internal datastructure in case, any opinion was updated
+    fn update_entry(&mut self, old_opinion: f32, new_opinion: f32) {
+        // often, nothing changes -> optimize for this converged case
+        if old_opinion == new_opinion {
+            return
+        }
+
+        // if something changes, we have to update the tree
+        // decrease the counter of the old opinion and remove it, if the counter hits 0
+        *self.opinion_set.entry(OrderedFloat(old_opinion))
+            .or_insert_with(|| panic!("Removed opinion was not in the tree!")) -= 1;
+        if self.opinion_set[&OrderedFloat(old_opinion)] == 0 {
+            self.opinion_set.remove(&OrderedFloat(old_opinion));
+        }
+        // increase the counter of the new opinion or insert a new node for it
+        *self.opinion_set.entry(OrderedFloat(new_opinion)).or_insert(0) += 1;
+    }
+
     /// calculate all new opinions using the improved method using the tree
     fn sync_new_opinions_tree(&self) -> Vec<f32> {
         self.agents.clone().iter().map(|i| {
             let (sum, count) = self.opinion_set
-                .range((Included(&OrderedFloat(i.opinion-i.confidence)), Included(&OrderedFloat(i.opinion+i.confidence))))
-                .map(|(j, ctr)| (j.into_inner(), ctr))
-                .fold((0., 0), |(sum, count), (j, ctr)| (sum + *ctr as f32 * j, count + ctr));
+                // this method traverses the tree starting from i.opinion-i.confidence
+                // up to i.opinion+i.confidence
+                .range(
+                    (
+                        Included(&OrderedFloat(i.opinion-i.confidence)),
+                        Included(&OrderedFloat(i.opinion+i.confidence))
+                    )
+                )
+                // into_inner converts an `OrderedFloat` into a f32
+                .map(|(x, ctr)| (x.into_inner(), ctr))
+                .fold((0., 0), |(sum, count), (x, ctr)| (sum + *ctr as f32 * x, count + ctr));
 
             let new_opinion = sum / count as f32;
             new_opinion
@@ -196,7 +210,6 @@ impl HegselmannKrause {
     pub fn sweep(&mut self) {
         // self.sweep_naive();
         self.sweep_tree();
-        self.time += 1;
     }
 
     /// A cluster are agents whose distance is less than EPS
