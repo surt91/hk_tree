@@ -8,7 +8,6 @@
 
 use std::collections::BTreeMap;
 use std::ops::Bound::Included;
-use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -24,10 +23,13 @@ use ordered_float::OrderedFloat;
 /// numerical tolerance
 const EPS: f32 = 1e-5;
 
+/// structure representing an agent
 #[derive(Clone, Debug)]
-pub struct HKAgent {
-    pub opinion: f32,
-    pub confidence: f32,
+struct HKAgent {
+    /// current opinion of the agent
+    opinion: f32,
+    /// idiosyncratic confidence of the agent
+    confidence: f32,
 }
 
 impl HKAgent {
@@ -39,6 +41,7 @@ impl HKAgent {
     }
 }
 
+/// used for testing purposes
 impl PartialEq for HKAgent {
     fn eq(&self, other: &HKAgent) -> bool {
         (self.opinion - other.opinion).abs() < EPS
@@ -46,29 +49,31 @@ impl PartialEq for HKAgent {
     }
 }
 
+/// structure representing a realization of the HK model
 pub struct HegselmannKrause {
-    pub num_agents: u32,
-    pub agents: Vec<HKAgent>,
+    /// number of agents in the system
+    num_agents: u32,
+    /// vector of all agents constituting the system
+    agents: Vec<HKAgent>,
+    /// lower bound of the confidences of all agents
     min_confidence: f32,
+    /// upper bound of the confidences of all agents
     max_confidence: f32,
 
-    pub opinion_set: BTreeMap<OrderedFloat<f32>, u32>,
+    /// the tree structure used to efficiently update the system
+    opinion_set: BTreeMap<OrderedFloat<f32>, u32>,
+    /// total change of agents opinion during the last sweep
     pub accumulated_change: f32,
 
-    // we need many, good (but not crypto) random numbers
-    // we will use here the pcg generator
+    /// we need many, good (but not crypto) random numbers
+    /// we will use here the pcg generator
     rng: Pcg64,
 }
 
+/// used for testing purposes
 impl PartialEq for HegselmannKrause {
     fn eq(&self, other: &HegselmannKrause) -> bool {
         self.agents == other.agents
-    }
-}
-
-impl fmt::Debug for HegselmannKrause {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "HK {{ N: {}, agents: {:?} }}", self.num_agents, self.agents)
     }
 }
 
@@ -82,7 +87,6 @@ impl HegselmannKrause {
         let rng = Pcg64::seed_from_u64(seed);
         let agents: Vec<HKAgent> = Vec::new();
 
-        // datastructure for `step_tree`
         let opinion_set = BTreeMap::new();
 
         let mut hk = HegselmannKrause {
@@ -109,7 +113,7 @@ impl HegselmannKrause {
             x*(high-low)+low
         }
 
-        // initialize the vector of agents with uniformly distributed opinions and confidences
+        // initialize a vector of n agents with uniformly distributed opinions and confidences
         self.agents = (0..self.num_agents).map(|_| HKAgent::new(
             self.rng.gen(),
             scale(self.rng.gen(), self.min_confidence, self.max_confidence),
@@ -120,9 +124,9 @@ impl HegselmannKrause {
         for i in self.agents.iter() {
             *self.opinion_set.entry(OrderedFloat(i.opinion)).or_insert(0) += 1;
         }
-        // assert that every agent has a corrsponding opinion in the tree
-        assert!(self.opinion_set.iter().map(|(_, v)| v).sum::<u32>() == self.num_agents);
 
+        // assert that every agent has a corresponding opinion in the tree
+        assert!(self.opinion_set.iter().map(|(_, v)| v).sum::<u32>() == self.num_agents);
     }
 
     /// calculate all new opinions using the naive method of iterating all agents
@@ -228,8 +232,8 @@ impl HegselmannKrause {
     }
 
     pub fn cluster_sizes(&self) -> Vec<usize> {
-        let clusters = self.list_clusters();
-        clusters.iter()
+        self.list_clusters()
+            .iter()
             .map(|c| c.len() as usize)
             .collect()
     }
@@ -237,11 +241,13 @@ impl HegselmannKrause {
     pub fn write_cluster_sizes(&self, file: &mut File) -> std::io::Result<()> {
         let clusters = self.list_clusters();
 
+        // write positions of the clusters
         let string_list = clusters.iter()
             .map(|c| c[0].opinion)
             .join(" ");
         write!(file, "# {}\n", string_list)?;
 
+        // write sizes of the clusters
         let string_list = clusters.iter()
             .map(|c| c.len().to_string())
             .join(" ");
