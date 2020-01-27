@@ -177,7 +177,7 @@ impl HegselmannKrause {
 
     /// calculate all new opinions using the improved method using the tree
     fn sync_new_opinions_tree(&self) -> Vec<f32> {
-        self.agents.clone().iter().map(|i| {
+        self.agents.iter().map(|i| {
             let (sum, count) = self.opinion_set
                 // this method traverses the tree starting from i.opinion-i.confidence
                 // up to i.opinion+i.confidence
