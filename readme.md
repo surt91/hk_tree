@@ -30,25 +30,27 @@ In a search tree each node has a `key` and at most two children, such that its
 Using a python-esque, recursive pseudocode, this traversal could look like the
 following. Note that the comparisons in front of the recursive calls cut all
 subtrees from the traversal, which contain only nodes which are outside of the
-range, such that this algorithm has a runtime of $O(\log(n) + m)$, where $m$
-is the number of elements in range, if the tree is balanced.
+range, i.e., it uses the order of the tree to find the first element of the
+range and traverses only until the last.
+Therefore, this algorithm has (for a balanced tree) a complexity of
+$O(\log(n) + m)$, where $m$ is the number of elements in the range.
 
 ```python
-def find_then_traverse(node, queue, lower, upper):
+def traverse_range(node, queue, lower, upper):
     if not node:
         return
 
     if node.key > lower:
-        find_then_traverse(node.left, lower, upper)
+        traverse_range(node.left, lower, upper)
 
     if lower <= node.key <= upper:
         queue.push(node.key)
 
     if node.key < upper:
-        find_then_traverse(node.right, lower, upper)
+        traverse_range(node.right, lower, upper)
 
 queue = []
-find_then_traverse(root, queue, x-eps, x+eps)
+traverse_range(root, queue, x-eps, x+eps)
 average = sum(queue) / len(queue)
 ```
 
@@ -77,7 +79,7 @@ benefits from the caches of modern processors.
 
 ## Example implementation
 
-In the `src` firectory there is an example implementation for the tree-based
+In the `src` directory there is an example implementation for the tree-based
 Hegselmann-Krause update. It is written in the rust programming language for
 its high performance and high-level abstractions.
 (For installation instructions, see [rustup.rs](https://rustup.rs/)).
