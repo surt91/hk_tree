@@ -2,17 +2,17 @@
 
 ## The algorithm
 
-For a Hegselmann-Krause update of agent $i$ one has to find all agents $j$
-with an opinion in the range $[x_i - \varepsilon_i, x_i + \varepsilon_i]$.
+For a Hegselmann-Krause update of agent `i` one has to find all agents `j`
+with an opinion in the range `[x_i - eps_i, x_i + eps_i]`.
 
 The main idea is to maintain a Search Tree of all $n$ agents' opinions.
 Every time an agent changes its opinion, the tree needs to be updated:
 Each time the opinion of an agent changes, its previous opinion has to be
 removed from the tree and its new opinion needs to be inserted such that the
-order property is preserved. Both can be done in time $O(\log(n))$.
-However, in the tree, one can find efficiently the entry $x_i - \varepsilon_i$
-in $O(\log(n))$. As soon as this node is reached, the tree can be traversed
-in order until a node with a key larger than the upper bound $x_i + \varepsilon_i$
+order property is preserved. Both can be done in time `O(log(n))`.
+However, in the tree, one can find efficiently the entry `x_i - eps_i`
+in `O(\log(n))`. As soon as this node is reached, the tree can be traversed
+in order until a node with a key larger than the upper bound `x_i + eps_i`
 is encountered.
 
 In a search tree each node has a `key` and at most two children, such that its
@@ -36,7 +36,7 @@ subtrees from the traversal, which contain only nodes which are outside of the
 range, i.e., it uses the order of the tree to find the first element of the
 range and traverses only until the last.
 Therefore, this algorithm has (for a balanced tree) a complexity of
-$O(\log(n) + m)$, where $m$ is the number of elements in the range.
+`O(\log(n) + m)`, where `m` is the number of elements in the range.
 
 Each `node` of the tree represents an agent. The `key` field of each node
 contains the value of the opinion of the corresponding agent. In this example
@@ -83,7 +83,7 @@ state, this contributes most to the speedup of this algorithm.
 
 To ensure that the `finding` phase is fast, the tree needs to be balanced,
 i.e., the number of nodes on each level should increase exponentially to
-ensure that finding the lower bound can be done in $O(\log n)$. This could
+ensure that finding the lower bound can be done in `O(\log n)`. This could
 be achieved by using AVL- or red-black trees. But generally binary trees are
 not very efficient for in-order traversal. We decided to use a B-tree instead,
 which stores multiple values in each node, such that in-order traversal
