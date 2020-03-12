@@ -11,7 +11,7 @@ Each time the opinion of an agent changes, its previous opinion has to be
 removed from the tree and its new opinion needs to be inserted such that the
 order property is preserved. Both can be done in time `O(log(n))`.
 However, in the tree, one can find efficiently the entry `x_i - eps_i`
-in `O(\log(n))`. As soon as this node is reached, the tree can be traversed
+in `O(log(n))`. As soon as this node is reached, the tree can be traversed
 in order until a node with a key larger than the upper bound `x_i + eps_i`
 is encountered.
 
@@ -30,16 +30,24 @@ In a search tree each node has a `key` and at most two children, such that its
  0         7   9
 ```
 
+For a more complete introduction into tree datastructures and algorithms
+operating on trees, we highly recommend textbooks on these topics, like
+*Introduction to algorithms* from Cormen, Leiserson, Rivest, and Stein, or
+*Algorithms* from Sedgewick, and Wayne.
+
+For our application, each `node` of the tree represents an agent. The `key`
+of each node contains the value of the opinion of the corresponding agent.
+
 Using a python-esque, recursive pseudocode, this traversal could look like the
 following. Note that the comparisons in front of the recursive calls cut all
 subtrees from the traversal, which contain only nodes which are outside of the
 range, i.e., it uses the order of the tree to find the first element of the
 range and traverses only until the last.
 Therefore, this algorithm has (for a balanced tree) a complexity of
-`O(\log(n) + m)`, where `m` is the number of elements in the range.
-
-Each `node` of the tree represents an agent. The `key` field of each node
-contains the value of the opinion of the corresponding agent. In this example
+`O(log(n) + m)`, where `m` is the number of elements in the range.
+Note that this function does not return a value, but fills the parameter
+`queue` with the `keys` (opinions) of the encountered `nodes` (agents),
+which are needed for the update.
 
 ```python
 def traverse_range(node, queue, lower, upper):
@@ -55,7 +63,7 @@ def traverse_range(node, queue, lower, upper):
     if lower <= node.key <= upper:
         queue.push(node.key)
 
-    # if the current node is smaller than our uper bound,
+    # if the current node is smaller than our upper bound,
     # search the right subtree recursively
     if node.key < upper:
         traverse_range(node.right, lower, upper)
@@ -83,7 +91,7 @@ state, this contributes most to the speedup of this algorithm.
 
 To ensure that the `finding` phase is fast, the tree needs to be balanced,
 i.e., the number of nodes on each level should increase exponentially to
-ensure that finding the lower bound can be done in `O(\log n)`. This could
+ensure that finding the lower bound can be done in `O(log n)`. This could
 be achieved by using AVL- or red-black trees. But generally binary trees are
 not very efficient for in-order traversal. We decided to use a B-tree instead,
 which stores multiple values in each node, such that in-order traversal
