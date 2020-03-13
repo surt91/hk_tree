@@ -59,7 +59,8 @@ def traverse_range(node, queue, lower, upper):
     if node.key > lower:
         traverse_range(node.left, lower, upper)
 
-    # if the current node is within range, save
+    # if the current node is within range,
+    # store it for later evaluation
     if lower <= node.key <= upper:
         queue.push(node.key)
 
