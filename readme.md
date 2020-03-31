@@ -94,10 +94,14 @@ To ensure that the `finding` phase is fast, the tree needs to be balanced,
 i.e., the number of nodes on each level should increase exponentially to
 ensure that finding the lower bound can be done in `O(log n)`. This could
 be achieved by using AVL- or red-black trees. But generally binary trees are
-not very efficient for in-order traversal. We decided to use a B-tree instead,
-which stores multiple values in each node, such that in-order traversal
-benefits from the caches of modern processors. All used operations still have
-the same asymptotic complexity as a binary tree.
+not very efficient for in-order traversal. We decided to use a B-tree instead.
+Without going into to much detail, a B-tree is a
+self-balancing generalization of a BST, which stores multiple
+values inside a node (up to $B+1$, resulting in $B$ children, hence the
+name). Due to the design of contemporary processors, this leads to a
+better utilization of caches and is therefore better suited
+to iterate over contiguous ranges of entries.
+All used operations still have the same asymptotic complexity as a binary tree.
 
 
 ## Example implementation
