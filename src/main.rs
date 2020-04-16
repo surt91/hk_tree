@@ -58,7 +58,7 @@ fn main() -> std::io::Result<()> {
 
             // test if we are converged
             if hk.accumulated_change < 1e-4 {
-                write!(output, "# sweeps: {}\n", ctr)?;
+                writeln!(output, "# sweeps: {}", ctr)?;
                 break;
             }
             hk.accumulated_change = 0.;

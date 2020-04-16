@@ -1,3 +1,7 @@
+// we use float comparision to test if an entry did change during an iteration for performance
+// false positives do not lead to wrong results
+#![allow(clippy::float_cmp)]
+
 /// This file implements the Hegselmann-Krause bounded confidence model with heterogeneous
 /// confidences and synchronous update. It implements two different algorithms to update
 /// the agents:
@@ -122,7 +126,7 @@ impl HegselmannKrause {
         // initialize the tree of opinions with the initial conditions of the agents
         self.opinion_set.clear();
         for i in self.agents.iter() {
-            *self.opinion_set.entry(OrderedFloat(i.opinion)).or_insert(0) += 1;
+            *self.opinion_set.entry(i.opinion.into()).or_insert(0) += 1;
         }
 
         // assert that every agent has a corresponding opinion in the tree
@@ -166,13 +170,13 @@ impl HegselmannKrause {
 
         // if something changes, we have to update the tree
         // decrease the counter of the old opinion and remove it, if the counter hits 0
-        *self.opinion_set.entry(OrderedFloat(old_opinion))
+        *self.opinion_set.entry(old_opinion.into())
             .or_insert_with(|| panic!("Removed opinion was not in the tree!")) -= 1;
-        if self.opinion_set[&OrderedFloat(old_opinion)] == 0 {
-            self.opinion_set.remove(&OrderedFloat(old_opinion));
+        if self.opinion_set[&old_opinion.into()] == 0 {
+            self.opinion_set.remove(&old_opinion.into());
         }
         // increase the counter of the new opinion or insert a new node for it
-        *self.opinion_set.entry(OrderedFloat(new_opinion)).or_insert(0) += 1;
+        *self.opinion_set.entry(new_opinion.into()).or_insert(0) += 1;
     }
 
     /// calculate all new opinions using the improved method using the tree
@@ -221,7 +225,7 @@ impl HegselmannKrause {
         let mut clusters: Vec<Vec<HKAgent>> = Vec::new();
         'agent: for i in &self.agents {
             for c in &mut clusters {
-                if (i.opinion - &c[0].opinion).abs() < EPS {
+                if (i.opinion - c[0].opinion).abs() < EPS {
                     c.push(i.clone());
                     continue 'agent;
                 }
@@ -245,13 +249,13 @@ impl HegselmannKrause {
         let string_list = clusters.iter()
             .map(|c| c[0].opinion)
             .join(" ");
-        write!(file, "# {}\n", string_list)?;
+        writeln!(file, "# {}", string_list)?;
 
         // write sizes of the clusters
         let string_list = clusters.iter()
             .map(|c| c.len().to_string())
             .join(" ");
-        write!(file, "{}\n", string_list)?;
+        writeln!(file, "{}", string_list)?;
         Ok(())
     }
 }
