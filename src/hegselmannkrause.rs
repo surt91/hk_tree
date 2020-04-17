@@ -1,7 +1,3 @@
-// we use float comparision to test if an entry did change during an iteration for performance
-// false positives do not lead to wrong results
-#![allow(clippy::float_cmp)]
-
 /// This file implements the Hegselmann-Krause bounded confidence model with heterogeneous
 /// confidences and synchronous update. It implements two different algorithms to update
 /// the agents:
@@ -144,8 +140,7 @@ impl HegselmannKrause {
                 count += 1;
             }
 
-            let new_opinion = sum / count as f32;
-            new_opinion
+            sum / count as f32
         }).collect()
     }
 
@@ -154,13 +149,16 @@ impl HegselmannKrause {
         let new_opinions = self.sync_new_opinions_naive();
         self.accumulated_change = 0.;
 
-        for i in 0..self.num_agents as usize {
-            self.accumulated_change += (self.agents[i].opinion - new_opinions[i]).abs();
+        for (i, &new_opinion) in new_opinions.iter().enumerate() {
+            self.accumulated_change += (self.agents[i].opinion - new_opinion).abs();
 
-            self.agents[i].opinion = new_opinions[i];
+            self.agents[i].opinion = new_opinion;
         }
     }
 
+    // we use float comparision to test if an entry did change during an iteration for performance
+    // false negatives do not lead to wrong results
+    #[allow(clippy::float_cmp)]
     /// update the internal datastructure in case, any opinion was updated
     fn update_entry(&mut self, old_opinion: f32, new_opinion: f32) {
         // often, nothing changes -> optimize for this converged case
@@ -195,8 +193,7 @@ impl HegselmannKrause {
                 .map(|(x, ctr)| (x.into_inner(), ctr))
                 .fold((0., 0), |(sum, count), (x, ctr)| (sum + *ctr as f32 * x, count + ctr));
 
-            let new_opinion = sum / count as f32;
-            new_opinion
+            sum / count as f32
         }).collect()
     }
 
@@ -205,13 +202,13 @@ impl HegselmannKrause {
         let new_opinions = self.sync_new_opinions_tree();
         self.accumulated_change = 0.;
 
-        for i in 0..self.num_agents as usize {
+        for (i, &new_opinion) in new_opinions.iter().enumerate() {
             let old_opinion = self.agents[i].opinion;
-            self.update_entry(old_opinion, new_opinions[i]);
+            self.update_entry(old_opinion, new_opinion);
 
-            self.accumulated_change += (old_opinion - new_opinions[i]).abs();
+            self.accumulated_change += (old_opinion - new_opinion).abs();
 
-            self.agents[i].opinion = new_opinions[i];
+            self.agents[i].opinion = new_opinion;
         }
     }
 
