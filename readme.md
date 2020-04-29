@@ -5,7 +5,7 @@
 For a Hegselmann-Krause update of agent `i` one has to find all agents `j`
 with an opinion in the range `[x_i - eps_i, x_i + eps_i]`.
 
-The main idea is to maintain a Search Tree of all $n$ agents' opinions.
+The main idea is to maintain a Search Tree of all `n` agents' opinions.
 Every time an agent changes its opinion, the tree needs to be updated:
 Each time the opinion of an agent changes, its previous opinion has to be
 removed from the tree and its new opinion needs to be inserted such that the
@@ -97,7 +97,7 @@ be achieved by using AVL- or red-black trees. But generally binary trees are
 not very efficient for in-order traversal. We decided to use a B-tree instead.
 Without going into to much detail, a B-tree is a
 self-balancing generalization of a BST, which stores multiple
-values inside a node (up to $B+1$, resulting in $B$ children, hence the
+values inside a node (up to `B+1`, resulting in `B` children, hence the
 name). Due to the design of contemporary processors, this leads to a
 better utilization of caches and is therefore better suited
 to iterate over contiguous ranges of entries.
