@@ -1,5 +1,4 @@
 /// This file implements a rudimentary command line interface and the main loop for simulations
-
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -42,7 +41,7 @@ fn main() -> std::io::Result<()> {
         args.num_agents,
         args.min_confidence as f32,
         args.max_confidence as f32,
-        args.seed
+        args.seed,
     );
 
     let mut output = File::create(&args.outname)?;

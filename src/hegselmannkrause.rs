@@ -5,15 +5,14 @@
 ///               within the confidence interval for the calculation of the next state
 /// `sweep_tree`  uses the improved algorithm, based on a search tree (here a BTree), introduced
 ///               in the corresponding article
-
 use std::collections::BTreeMap;
-use std::ops::Bound::Included;
 use std::fs::File;
 use std::io::prelude::*;
+use std::ops::Bound::Included;
 
+use itertools::Itertools;
 use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64;
-use itertools::Itertools;
 
 // note that `OrderedFloat` is a technicality to allow using floats as keys in
 // the tree (rooted in the problem that IEEE floats do not have a total order, due to `nan`,
@@ -78,12 +77,7 @@ impl PartialEq for HegselmannKrause {
 }
 
 impl HegselmannKrause {
-    pub fn new(
-        n: u32,
-        min_confidence: f32,
-        max_confidence: f32,
-        seed: u64
-    ) -> HegselmannKrause {
+    pub fn new(n: u32, min_confidence: f32, max_confidence: f32, seed: u64) -> HegselmannKrause {
         let rng = Pcg64::seed_from_u64(seed);
         let agents: Vec<HKAgent> = Vec::new();
 
@@ -110,14 +104,18 @@ impl HegselmannKrause {
     pub fn reset(&mut self) {
         /// helper function to scale a uniform[0,1] random number to a uniform[low, high]
         fn scale(x: f32, low: f32, high: f32) -> f32 {
-            x*(high-low)+low
+            x * (high - low) + low
         }
 
         // initialize a vector of n agents with uniformly distributed opinions and confidences
-        self.agents = (0..self.num_agents).map(|_| HKAgent::new(
-            self.rng.gen(),
-            scale(self.rng.gen(), self.min_confidence, self.max_confidence),
-        )).collect();
+        self.agents = (0..self.num_agents)
+            .map(|_| {
+                HKAgent::new(
+                    self.rng.gen(),
+                    scale(self.rng.gen(), self.min_confidence, self.max_confidence),
+                )
+            })
+            .collect();
 
         // initialize the tree of opinions with the initial conditions of the agents
         self.opinion_set.clear();
@@ -131,17 +129,23 @@ impl HegselmannKrause {
 
     /// calculate all new opinions using the naive method of iterating all agents
     fn sync_new_opinions_naive(&self) -> Vec<f32> {
-        self.agents.iter().map(|i| {
-            let mut sum = 0.;
-            let mut count = 0;
-            for j in self.agents.iter()
-                    .filter(|j| (i.opinion - j.opinion).abs() < i.confidence) {
-                sum += j.opinion;
-                count += 1;
-            }
+        self.agents
+            .iter()
+            .map(|i| {
+                let mut sum = 0.;
+                let mut count = 0;
+                for j in self
+                    .agents
+                    .iter()
+                    .filter(|j| (i.opinion - j.opinion).abs() < i.confidence)
+                {
+                    sum += j.opinion;
+                    count += 1;
+                }
 
-            sum / count as f32
-        }).collect()
+                sum / count as f32
+            })
+            .collect()
     }
 
     // perform a sweep (update every agent) with the naive method
@@ -163,12 +167,14 @@ impl HegselmannKrause {
     fn update_entry(&mut self, old_opinion: f32, new_opinion: f32) {
         // often, nothing changes -> optimize for this converged case
         if old_opinion == new_opinion {
-            return
+            return;
         }
 
         // if something changes, we have to update the tree
         // decrease the counter of the old opinion and remove it, if the counter hits 0
-        *self.opinion_set.entry(old_opinion.into())
+        *self
+            .opinion_set
+            .entry(old_opinion.into())
             .or_insert_with(|| panic!("Removed opinion was not in the tree!")) -= 1;
         if self.opinion_set[&old_opinion.into()] == 0 {
             self.opinion_set.remove(&old_opinion.into());
@@ -179,22 +185,26 @@ impl HegselmannKrause {
 
     /// calculate all new opinions using the improved method using the tree
     fn sync_new_opinions_tree(&self) -> Vec<f32> {
-        self.agents.iter().map(|i| {
-            let (sum, count) = self.opinion_set
-                // this method traverses the tree starting from i.opinion-i.confidence
-                // up to i.opinion+i.confidence
-                .range(
-                    (
-                        Included(&OrderedFloat(i.opinion-i.confidence)),
-                        Included(&OrderedFloat(i.opinion+i.confidence))
-                    )
-                )
-                // into_inner converts an `OrderedFloat` into a f32
-                .map(|(x, ctr)| (x.into_inner(), ctr))
-                .fold((0., 0), |(sum, count), (x, ctr)| (sum + *ctr as f32 * x, count + ctr));
+        self.agents
+            .iter()
+            .map(|i| {
+                let (sum, count) = self
+                    .opinion_set
+                    // this method traverses the tree starting from i.opinion-i.confidence
+                    // up to i.opinion+i.confidence
+                    .range((
+                        Included(&OrderedFloat(i.opinion - i.confidence)),
+                        Included(&OrderedFloat(i.opinion + i.confidence)),
+                    ))
+                    // into_inner converts an `OrderedFloat` into a f32
+                    .map(|(x, ctr)| (x.into_inner(), ctr))
+                    .fold((0., 0), |(sum, count), (x, ctr)| {
+                        (sum + *ctr as f32 * x, count + ctr)
+                    });
 
-            sum / count as f32
-        }).collect()
+                sum / count as f32
+            })
+            .collect()
     }
 
     // perform a sweep (update every agent) with the tree-based method
@@ -243,15 +253,11 @@ impl HegselmannKrause {
         let clusters = self.list_clusters();
 
         // write positions of the clusters
-        let string_list = clusters.iter()
-            .map(|c| c[0].opinion)
-            .join(" ");
+        let string_list = clusters.iter().map(|c| c[0].opinion).join(" ");
         writeln!(file, "# {}", string_list)?;
 
         // write sizes of the clusters
-        let string_list = clusters.iter()
-            .map(|c| c.len().to_string())
-            .join(" ");
+        let string_list = clusters.iter().map(|c| c.len().to_string()).join(" ");
         writeln!(file, "{}", string_list)?;
         Ok(())
     }
