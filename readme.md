@@ -118,3 +118,11 @@ and saves the cluster configuration into a file (more info with `cargo run -- -h
 
 The most interesting file is probably `src/hegselmannkrause.rs`, which includes
 an implementation of the algorithm.
+
+
+## Example evaluation
+
+In `example.py` is a short example to calculate the `<S>(epsilon)` curve.
+It contains a general purpose function `parse_file_generator` to read the
+output file format and a short script, which starts some quick simulations
+and visualizes the resulting `<S>(epsilon)` curve if matplotlib is installed.
