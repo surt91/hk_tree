@@ -1,5 +1,8 @@
 # Tree-based Hegselmann-Krause update
 
+The algorithm was introduced in the article [*When open mindedness hinders consensus*, Hendrik Schawe, Laura Hernández, Scientific Reports **10**, 8273 (2020) ](https://dx.doi.org/10.1038/s41598-020-64691-0).
+Please cite it, if this algorithm is helpful for you.
+
 ## The algorithm
 
 For a Hegselmann-Krause update of agent `i` one has to find all agents `j`
