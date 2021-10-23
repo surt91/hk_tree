@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["hk"] = [{"text":"impl Freeze for <a class=\"struct\" href=\"hk/hegselmannkrause/struct.HegselmannKrause.html\" title=\"struct hk::hegselmannkrause::HegselmannKrause\">HegselmannKrause</a>","synthetic":true,"types":["hk::hegselmannkrause::HegselmannKrause"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

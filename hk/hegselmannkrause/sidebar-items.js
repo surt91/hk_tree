@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["HegselmannKrause","structure representing a realization of the HK model"]]});

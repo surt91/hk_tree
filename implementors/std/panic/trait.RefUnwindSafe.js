@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["hk"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.55.0/std/panic/trait.RefUnwindSafe.html\" title=\"trait std::panic::RefUnwindSafe\">RefUnwindSafe</a> for <a class=\"struct\" href=\"hk/hegselmannkrause/struct.HegselmannKrause.html\" title=\"struct hk::hegselmannkrause::HegselmannKrause\">HegselmannKrause</a>","synthetic":true,"types":["hk::hegselmannkrause::HegselmannKrause"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

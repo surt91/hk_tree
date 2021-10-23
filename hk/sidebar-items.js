@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["hegselmannkrause","This is mostly boilerplate to enable the benchmark and test function"]]});
